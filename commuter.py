@@ -25,12 +25,29 @@ def journey(from_, to, date_time):
     to_region = admin_region(to)
     # print from_region
     resp = requests.get(
-        'https://api.sncf.com/v1/coverage/sncf/journeys?from=' + from_region + '&to=' + to_region + '&disable_geojson=true&datetime=' + date_time,
+        'https://api.sncf.com/v1/coverage/sncf/journeys?from=' + from_region + '&to=' + to_region + '&disable_geojson=1&datetime=' + date_time,
         auth=(TOKEN, '')
     ).json()
+
     journey = resp['journeys'][0]
     for section in journey['sections']:
         if 'mode' in section and section['mode'] == 'walking': continue
+
+
+        disruptions = []
+        for link in section['display_informations']['links']:
+            # print link
+            if link['type'] == 'disruption':
+                disruptions.append(link['id'])
+        section['disruptions'] = []
+
+        if disruptions and 'disruptions' in resp:
+            for d in resp['disruptions']:
+                # if d['id'] in disruptions:
+                # section['cause'] = d['impacted_objects'][0]['impacted_stops'][0]['cause']
+                # del d['impacted_objects']
+                section['disruptions'].append(d)
+
         return section
 
     return
@@ -101,5 +118,6 @@ def stop_schedules(qs, qheadsign, qdate):
 # json.dumps(stop_schedules('Troyes', None, '20161212T094000'))
 # print json.dumps(stop_schedules('Troyes', '11942', '20161209T094000'))
 # print json.dumps(stop_schedules('Paris Est', '11847', '20161209T194000'))
+print json.dumps(journey('Paris', 'Troyes', '20161212T194000'))
+# print json.dumps(journey('Troyes', 'Paris', '20161212T094000'))
 # print json.dumps(disruption('Troyes')['disruptions'])
-print json.dumps(journey('Troyes', 'Paris', '20161212T094000'))
